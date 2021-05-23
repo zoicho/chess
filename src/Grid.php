@@ -52,7 +52,7 @@ class Grid
         /** @var GridMoves[] $allNextMoves */
         $allNextMoves = [];
 
-        /** @var GridMoves $validMoves */
+        /** @var GridMoves[] $validMoves */
         $validMoves = [];
 
         $countAll = 0;
