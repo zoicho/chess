@@ -126,7 +126,7 @@ class Grid
         }
 
         if($fromPosition->getX() === $toPosition->getX() && $fromPosition->getY() === $toPosition->getY()) {
-            throw new \Exception('Start position cannot be same as end position');
+            throw new \Exception('Start position cannot be the same as the end one');
         }
     }
 
