@@ -130,7 +130,7 @@ class Grid
         }
     }
 
-    public function isPositionOutOfTheBox(int $x,int $y): bool
+    public function isCoordsOutOfTheBox(int $x,int $y): bool
     {
         if($x < 1 || $x > self::$maxX) {
             return true;

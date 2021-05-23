@@ -38,7 +38,7 @@ class Horse implements IFigure
                 continue;
             }
 
-            if($grid->isPositionOutOfTheBox($newX, $newY)) {
+            if($grid->isCoordsOutOfTheBox($newX, $newY)) {
                 continue;
             }
 
