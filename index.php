@@ -11,12 +11,19 @@ $grid = new \Chess\Src\Grid();
 $shortestPath = null;
 $error = null;
 
+/** @var \Chess\Src\Figure\IFigure[] $figures */
+$figures = [
+    'horse' => new \Chess\Src\Figure\Horse(),
+    'tower' => new \Chess\Src\Figure\Tower(),
+    'ranger' => new \Chess\Src\Figure\Ranger(),
+];
+
 if(!empty($_POST['do']) && $_POST['do'] === 'calculateShortestPath') {
 
     try {
         $currentPosition = new \Chess\Src\GridPosition($_POST['fromPosX'],$_POST['fromPosY']);
         $wantedPosition = new \Chess\Src\GridPosition($_POST['toPosX'],$_POST['toPosY']);
-        $figure = new \Chess\Src\Figure\Horse();
+        $figure = $figures[$_POST['figure']];
 
         $shortestPath = $grid->getShortestPath($currentPosition, $wantedPosition, $figure);
     } catch (\Exception $e) {
@@ -68,6 +75,16 @@ if(!empty($_POST['do']) && $_POST['do'] === 'calculateShortestPath') {
             <?php
             for ($x = 1; $x <= \Chess\Src\Grid::getMaxY();$x++) {
                 echo '<option value="' . $x . '" ' . (!empty($_POST['toPosY']) && (int)$_POST['toPosY'] === $x ? 'selected' :'') . '>' . $x . '</option>>';
+            }
+            ?>
+        </select>
+    </div>
+    <div style="margin-bottom: 15px; text-align: center;">
+        <label style="display: inline-block; width: 50px;">Figure: </label>
+        <select name="figure">
+            <?php
+            foreach ($figures as $figureIndex => $figure) {
+                echo '<option value="' . $figureIndex . '" ' . (!empty($_POST['figure']) && $_POST['figure'] === $figureIndex ? 'selected' :'') . '>' . $figureIndex . '</option>>';
             }
             ?>
         </select>

@@ -4,6 +4,7 @@ namespace Chess\Src;
 
 
 use Chess\Src\Figure\IFigure;
+use Chess\Src\Figure\Ranger;
 use Chess\Src\Utils\Helpers;
 use Chess\Src\Utils\IterationChecker;
 
@@ -13,19 +14,24 @@ class Grid
     protected static $maxX = 8;
     protected static $maxY = 8;
 
+    protected static $useGlobalMovesHistory = true;
+
     public function getShortestPath(GridPosition $fromPosition, GridPosition $toPosition, IFigure $figure)
     {
-        $this->validatePositions($fromPosition, $toPosition);
+        $this->validatePositions($fromPosition, $toPosition, $figure);
 
         $gridMoves = new GridMoves();
         $gridMoves->addPositionToHistory($fromPosition);
+
+        $globalMoves = new GridMoves();
+        $globalMoves->addPositionToHistory($fromPosition);
 
         $nextPositions = $figure->getNextMovePositions($fromPosition, $this, $gridMoves);
         $gridMoves->setNextAvailableMoves($nextPositions);
 
         $nextMoves = [$gridMoves];
 
-        $resultMoves = $this->processPaths($nextMoves, $toPosition, $figure);
+        $resultMoves = $this->processPaths($nextMoves, $toPosition, $figure, $globalMoves);
 
         return $resultMoves->getMovePath();
     }
@@ -34,55 +40,59 @@ class Grid
      * @param GridMoves[] $nextMoves
      * @param GridPosition $toPosition
      * @param IFigure $figure
+     * @param GridMoves $globalMoves
      * @return GridMoves
      * @throws \Exception
      */
-    private function processPaths(array $nextMoves,  GridPosition $toPosition, IFigure $figure)
+    private function processPaths(array $nextMoves,  GridPosition $toPosition, IFigure $figure, GridMoves $globalMoves)
     {
 
-        IterationChecker::check('processPaths');
+        IterationChecker::check('processPaths',100);
 
         /** @var GridMoves[] $allNextMoves */
         $allNextMoves = [];
 
+        /** @var GridMoves $validMoves */
+        $validMoves = [];
+
+        $countAll = 0;
+
         foreach ($nextMoves as $nextMove) {
             foreach ($nextMove->getNextAvailableMoves() as $nextPosition) {
+
+                $countAll++;
 
                 $newGridMoves = new GridMoves();
                 $newGridMoves->setMovesAlready($nextMove->getMovesAlready());
                 $newGridMoves->addPositionToHistory($nextPosition);
+                if(self::$useGlobalMovesHistory) {
+                    $globalMoves->addPositionToHistory($nextPosition);
+                }
 
-                $nextPositions = $figure->getNextMovePositions($nextPosition, $this, $newGridMoves);
+                if($nextPosition->getX() === $toPosition->getX() && $nextPosition->getY() === $toPosition->getY()) {
+
+                    /** return first valid position */
+                    //return $nextMove;
+
+                    /** store valid move for further selection */
+                    $validMoves[] = $newGridMoves;
+                }
+
+                $nextPositions = $figure->getNextMovePositions($nextPosition, $this, self::$useGlobalMovesHistory ? $globalMoves : $newGridMoves);
                 $newGridMoves->setNextAvailableMoves($nextPositions);
 
                 $allNextMoves[] = $newGridMoves;
             }
         }
 
-        /** @var GridMoves $validMoves */
-        $validMoves = [];
-
-        foreach ($allNextMoves as $nextMove) {
-            /** @var GridPosition $nextPosition */
-            foreach ($nextMove->getNextAvailableMoves() as $nextPosition) {
-                if($nextPosition->getX() === $toPosition->getX() && $nextPosition->getY() === $toPosition->getY()) {
-                    $nextMove->addPositionToHistory($nextPosition);
-
-                    /** return first valid position */
-                    //return $nextMove;
-
-                    /** store valid move for further selection */
-                    $validMoves[] = $nextMove;
-                }
-            }
-        }
-
         /** return shortest path relative to target location */
         if($validMoves) {
+            bdump('all valid moves');
+            bdump($validMoves);
             return $this->getShortestMovesRelativeToPosition($validMoves, $toPosition);
         }
 
-        return $this->processPaths($allNextMoves, $toPosition, $figure);
+        return $this->processPaths($allNextMoves, $toPosition, $figure, $globalMoves);
     }
 
     /**
@@ -116,7 +126,7 @@ class Grid
         return array_shift($tempMoves)['moves'];
     }
 
-    public function validatePositions(GridPosition $fromPosition, GridPosition $toPosition)
+    public function validatePositions(GridPosition $fromPosition, GridPosition $toPosition, IFigure $figure)
     {
         if(Helpers::toInt($fromPosition->getX()) > self::$maxX || Helpers::toInt($toPosition->getX()) > self::$maxX) {
             throw new \Exception('Position X is out of the box');
@@ -128,6 +138,18 @@ class Grid
         if($fromPosition->getX() === $toPosition->getX() && $fromPosition->getY() === $toPosition->getY()) {
             throw new \Exception('Start position cannot be the same as the end one');
         }
+
+        if($figure instanceof Ranger) {
+            if(
+                (($fromPosition->getY() + Helpers::toInt($fromPosition->getX())) % 2 === 0 &&
+                ($toPosition->getY() + Helpers::toInt($toPosition->getX())) % 2 !== 0) ||
+                (($fromPosition->getY() + Helpers::toInt($fromPosition->getX())) % 2 !== 0 &&
+                ($toPosition->getY() + Helpers::toInt($toPosition->getX())) % 2 === 0)
+            ) {
+                throw new \Exception('Target position is invalid');
+            }
+        }
+
     }
 
     public function isCoordsOutOfTheBox(int $x,int $y): bool

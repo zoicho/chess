@@ -7,7 +7,7 @@ class IterationChecker
 
     protected static $iterations = [];
 
-    protected static $limit = 10000;
+    protected static $limit = 100000;
 
     public function __construct()
     {
