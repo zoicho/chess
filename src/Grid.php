@@ -13,16 +13,6 @@ class Grid
     protected static $maxX = 8;
     protected static $maxY = 8;
 
-    /**
-     * @var array
-     */
-    private $alphabeticalMap;
-
-
-    public function __construct()
-    {
-    }
-
     public function getShortestPath(GridPosition $fromPosition, GridPosition $toPosition, IFigure $figure)
     {
         $this->validatePositions($fromPosition, $toPosition);
